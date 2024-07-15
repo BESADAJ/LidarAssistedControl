@@ -1,5 +1,5 @@
 % IEA15MW_03: IEA 15 MW monopile + realistic wind preview from a 
-% 4-beam pulsed lidar system measuring at 160 m.
+% circular-scanning continuous-wave lidar system measuring at 200 m.
 % This script needs to be run after RunExample_4BeamPulsed.m. 
 % Purpose:
 % A postprocessing version without the need to compile DLLs for lidar data
@@ -8,7 +8,7 @@
 % R_FBFF = CalculateREWSfromLidarData_LDP_v1(FBFF,DT,TMax,LDP);
 % with your own function with the same inputs and outputs.
 % Result:
-% Cost for Summer Games 2024 ("18 m/s hurdles"):  0.444616 m/s 
+% Cost for Summer Games 2024 ("18 m/s hurdles"):  0.352534 m/s
 
 %% Setup
 clearvars;close all;clc;
@@ -28,20 +28,20 @@ R                   = 120;                      % [m]  	rotor radius to calculat
 tau                 = 2;                        % [s]   time to overcome pitch actuator, from Example 1: tau = T_Taylor - T_buffer, since there T_filter = T_scan = 0
 
 % configuration from LDP_v1_4BeamPulsed.IN and FFP_v1_4BeamPulsed.IN
-LDP.NumberOfBeams       = 4;        % Number of beams measuring at different directions [-]               
-LDP.AngleToCenterline   = 19.176;   % Angle around centerline [deg]
-LDP.IndexGate           = 6;        % IndexGate
+LDP.NumberOfBeams       = 40;       % Number of beams measuring at different directions [-]               
+LDP.AngleToCenterline   = 15;       % Angle around centerline [deg]
+LDP.IndexGate           = 1;        % IndexGate
 LDP.FlagLPF             = 1;        % Enable low-pass filter (flag) [0/1]
-LDP.f_cutoff            = 0.1232;   % Corner frequency (-3dB) of the low-pass filter [rad/s]
-LDP.T_buffer            = 1.3889;   % Buffer time for filtered REWS signal [s]
+LDP.f_cutoff            = 0.3268;   % Corner frequency (-3dB) of the low-pass filter [rad/s]
+LDP.T_buffer            = 6.1111;   % Buffer time for filtered REWS signal [s]
 
 % Files (should not be be changed)
-SimulationFolderLAC = 'SimulationResults_4BeamPulsed';
+SimulationFolderLAC = 'SimulationResults_CircularCW';
 
 %% Postprocessing: evaluate data
 
-T_buffer_v              = 1.0:0.1:2.5;
-f_cutoff_v              = 0.15:0.01:0.18;
+T_buffer_v              = 5.0:0.1:6.0;
+f_cutoff_v              = 0.24:0.02:0.34;
 n_T_buffer              = length(T_buffer_v);
 n_f_cutoff              = length(f_cutoff_v);
 
@@ -51,8 +51,7 @@ MAE                     = NaN(n_f_cutoff,n_T_buffer,nSeed); % mean absolute erro
 
 % Loop over all seeds
 for iSeed = 1:nSeed
-
-    tic 
+ 
     % Load data
     Seed                = Seed_vec(iSeed);
     WindFileName        = ['URef_18_Seed_',num2str(Seed,'%02d')];
@@ -62,8 +61,6 @@ for iSeed = 1:nSeed
     % Get REWS from the wind field and interpolate it on the same time vector
     TurbSimResultFile                 	= ['TurbulentWind\URef_18_Seed_',num2str(Seed,'%02d'),'.wnd'];
     [REWS_WindField,Time_WindField]  	= CalculateREWSfromWindField(TurbSimResultFile,R,2);
-
-    toc
     
     % loop over frequency and buffer time
     for i_f_cutoff = 1:n_f_cutoff
