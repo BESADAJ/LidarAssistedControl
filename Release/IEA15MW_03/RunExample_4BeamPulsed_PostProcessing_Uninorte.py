@@ -34,21 +34,17 @@ R = 120
 tau = 2
 
 #Parameters modification for brute force, T_Buffer, f_cutoff
-print("insert buffer start")
-T_buffer_start= float(input())
+
+T_buffer_start = 1.3889
 T_buffer_reset = T_buffer_start
-print("insert buffer step")
-T_buffer_step= float(input())
-print("insert number of steps")
-T_buffer_count=int(input())
-print("insert f_cutoff start")
-f_cutoff_start= float(input())
-print("insert f_cutoff step")
-f_cutoff_step= float(input())
-print("insert number of steps")
-f_cutoff_count=int(input())
+T_buffer_step = 0.1
+T_buffer_count = 17
+f_cutoff_start = 0.1232
+f_cutoff_step = 0.01
+f_cutoff_count = 4
 CostPlot = np.zeros(T_buffer_count)
 BufferPlot = np.zeros(T_buffer_count)
+
 # Configuration from LDP_v1_4BeamPulsed.IN and LDP_v1_4BeamPulsed.IN
 for i_f_cutoff in range(f_cutoff_count):
     T_buffer_start=T_buffer_reset
