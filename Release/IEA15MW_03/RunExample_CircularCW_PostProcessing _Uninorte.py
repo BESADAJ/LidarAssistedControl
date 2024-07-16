@@ -35,13 +35,13 @@ tau = 2
 
 #Parameters modification for brute force, T_Buffer, f_cutoff
 
-T_buffer_start = 6.1111
+T_buffer_start = 5
 T_buffer_reset = T_buffer_start
 T_buffer_step = 0.1
-T_buffer_count = 5
-f_cutoff_start = 0.3268
-f_cutoff_step = 0.01
-f_cutoff_count = 4
+T_buffer_count = 10
+f_cutoff_start = 0.24
+f_cutoff_step = 0.02
+f_cutoff_count = 5
 CostPlot = np.zeros(T_buffer_count)
 BufferPlot = np.zeros(T_buffer_count)
 
