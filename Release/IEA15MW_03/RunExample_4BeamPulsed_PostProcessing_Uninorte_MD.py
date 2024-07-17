@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 from scipy.interpolate import interp1d
-from CalculateREWSfromLidarData_LDP_v1 import CalculateREWSfromLidarData_LDP_v1
+from CalculateREWSfromLidarData_LDP_MD import CalculateREWSfromLidarData_LDP_MD
 
 sys.path.append('../PythonFunctions')
 from PreProcessing.CalculateREWSfromWindField import CalulateREWSfromWindField
@@ -33,16 +33,15 @@ R = 120                                             # [m]  	rotor radius to calc
 # Parameter for Cost (Summer Games 2024)
 tau = 2                                             # [s]   time to overcome pitch actuator, from Example 1: tau = T_Taylor - T_buffer, since there T_filter = T_scan = 0
 
-
 #Parameters modification for brute force, T_Buffer, f_cutoff
 
-T_buffer_start = 1.3889
+T_buffer_start = 1.8
 T_buffer_reset = T_buffer_start
 T_buffer_step = 0.1
-T_buffer_count = 17
-f_cutoff_start = 0.1232
+T_buffer_count = 1
+f_cutoff_start = 0.16
 f_cutoff_step = 0.01
-f_cutoff_count = 4
+f_cutoff_count = 1
 CostPlot = np.zeros(T_buffer_count)
 BufferPlot = np.zeros(T_buffer_count)
 
@@ -58,6 +57,7 @@ for i_f_cutoff in range(f_cutoff_count):
             "f_cutoff":  float(f_cutoff_start),
             "T_buffer": float(T_buffer_start),
         }
+
 
         # Files (should not be changed)
         SimulationFolderLAC = "SimulationResults_4BeamPulsed"
@@ -75,7 +75,7 @@ for i_f_cutoff in range(f_cutoff_count):
             FBFF = ReadFASTbinaryIntoStruct(FASTresultFile)
 
             # Calculate REWS
-            R_FBFF = CalculateREWSfromLidarData_LDP_v1(FBFF, DT, TMax, LDP)
+            R_FBFF = CalculateREWSfromLidarData_LDP_MD(FBFF, DT, TMax, LDP)
 
             # Get REWS from the wind field and interpolate it on the same time vector
             TurbSimResultFile = f'TurbulentWind/URef_18_Seed_{Seed:02d}.wnd'
