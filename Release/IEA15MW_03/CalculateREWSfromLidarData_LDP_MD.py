@@ -14,9 +14,6 @@ def CalculateREWSfromLidarData_LDP_MD(FBFF, DT, TMax, LDP):
     R_FBFF["REWS"] = np.full(n_t, np.nan)
     R_FBFF["REWS_f"] = np.full(n_t, np.nan)
     R_FBFF["REWS_b"] = np.full(n_t, np.nan)
-
-    # Internal variable
-    ThisChannel = f"VLOS{LDP['IndexGate']:02d}LI"
     
     # Loop over time
     for i_t in range(n_t):
@@ -24,11 +21,11 @@ def CalculateREWSfromLidarData_LDP_MD(FBFF, DT, TMax, LDP):
 
         # If there is a new measurement, perform wind field reconstruction
         if FBFF["NEWDATALI"][Idx]:
-            v_los = FBFF[ThisChannel][Idx]
+            v_los_MD = np.array([FBFF["VLOS01LI"][Idx],FBFF["VLOS02LI"][Idx],FBFF["VLOS03LI"][Idx],FBFF["VLOS04LI"][Idx],FBFF["VLOS05LI"][Idx],FBFF["VLOS06LI"][Idx],FBFF["VLOS07LI"][Idx],FBFF["VLOS08LI"][Idx],FBFF["VLOS09LI"][Idx],FBFF["VLOS10LI"][Idx]])
             REWS_MD = WindFieldReconstruction(v_los_MD, LDP["NumberOfBeams"], LDP["AngleToCenterline"])
 
             #combine to one distance
-            REWS = REWS_MD(6)
+            REWS = REWS_MD[5]
 
         # Low-pass filter the REWS
         if LDP["FlagLPF"]:
@@ -49,22 +46,23 @@ def CalculateREWSfromLidarData_LDP_MD(FBFF, DT, TMax, LDP):
 
 #Line of sight 1*10
 def WindFieldReconstruction(v_los_MD, NumberOfBeams, AngleToCenterline):
+    NumberOfDistances = 10
+    u_est = v_los_MD / np.cos(np.deg2rad(AngleToCenterline))
 
     # Persistent variable (use list for simplicity)
-  if not hasattr(WindFieldReconstruction, 'u_est_Buffer'):
-    WindFieldReconstruction.u_est_Buffer = [np.nan] * NumberOfBeams
+    if not hasattr(WindFieldReconstruction, 'u_est_Buffer'):
+        WindFieldReconstruction.u_est_Buffer =  np.full((NumberOfBeams,NumberOfDistances), np.nan)
 
-  # Estimate u component assuming perfect alignment
-  u_est = v_los / np.cos(np.deg2rad(AngleToCenterline))
+    # Estimate u component assuming perfect alignment
+    u_est = v_los_MD / np.cos(np.deg2rad(AngleToCenterline))
 
-  # Update buffer for estimated u component
-  WindFieldReconstruction.u_est_Buffer = WindFieldReconstruction.u_est_Buffer[1:] + [u_est]
+    # Update buffer for estimated u component
+    WindFieldReconstruction.u_est_Buffer = np.vstack((u_est,WindFieldReconstruction.u_est_Buffer[0:NumberOfBeams-1] ))
 
-  # Calculate REWS from mean over all estimated u components (handling NaNs)
-  REWS = np.nanmean(WindFieldReconstruction.u_est_Buffer)
+    # Calculate REWS from mean over all estimated u components (handling NaNs)
+    REWS_MD = np.nanmean(WindFieldReconstruction.u_est_Buffer, axis=0)
 
-  return REWS_MD
-  #dimension 1x10
+    return REWS_MD
 
 
 def LPFilter(InputSignal, DT, CornerFreq):
