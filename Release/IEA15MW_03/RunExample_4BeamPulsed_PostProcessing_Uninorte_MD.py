@@ -14,14 +14,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 from scipy.interpolate import interp1d
-from CalculateREWSfromLidarData_LDP_v1 import CalculateREWSfromLidarData_LDP_v1
+from CalculateREWSfromLidarData_LDP_MD import CalculateREWSfromLidarData_LDP_MD
 
 sys.path.append('../PythonFunctions')
 from PreProcessing.CalculateREWSfromWindField import CalulateREWSfromWindField
 from FileOperations.ReadFASTbinaryIntoStruct import ReadFASTbinaryIntoStruct
 
 # Seeds (can be adjusted, but will provide different results)
-nSeed = 6
+nSeed = 1
 Seed_vec = np.arange(1, nSeed + 1) + 18 * 100
 
 # Parameters postprocessing (can be adjusted, but will provide different results)
@@ -33,16 +33,15 @@ R = 120                                             # [m]  	rotor radius to calc
 # Parameter for Cost (Summer Games 2024)
 tau = 2                                             # [s]   time to overcome pitch actuator, from Example 1: tau = T_Taylor - T_buffer, since there T_filter = T_scan = 0
 
-
 #Parameters modification for brute force, T_Buffer, f_cutoff
 
-T_buffer_start = 1.3889
+T_buffer_start = 1.8
 T_buffer_reset = T_buffer_start
 T_buffer_step = 0.1
-T_buffer_count = 17
-f_cutoff_start = 0.1232
+T_buffer_count = 1
+f_cutoff_start = 0.16
 f_cutoff_step = 0.01
-f_cutoff_count = 4
+f_cutoff_count = 1
 CostPlot = np.zeros(T_buffer_count)
 BufferPlot = np.zeros(T_buffer_count)
 
@@ -58,6 +57,7 @@ for i_f_cutoff in range(f_cutoff_count):
             "f_cutoff":  float(f_cutoff_start),
             "T_buffer": float(T_buffer_start),
         }
+
 
         # Files (should not be changed)
         SimulationFolderLAC = "SimulationResults_4BeamPulsed"
@@ -75,7 +75,7 @@ for i_f_cutoff in range(f_cutoff_count):
             FBFF = ReadFASTbinaryIntoStruct(FASTresultFile)
 
             # Calculate REWS
-            R_FBFF = CalculateREWSfromLidarData_LDP_v1(FBFF, DT, TMax, LDP)
+            R_FBFF = CalculateREWSfromLidarData_LDP_MD(FBFF, DT, TMax, LDP)
 
             # Get REWS from the wind field and interpolate it on the same time vector
             TurbSimResultFile = f'TurbulentWind/URef_18_Seed_{Seed:02d}.wnd'
@@ -88,24 +88,24 @@ for i_f_cutoff in range(f_cutoff_count):
             MAE[iSeed] = np.mean(np.abs(Error[R_FBFF["Time"] >= t_start]))
 
             # Plot REWS for absolute error
-            # plt.figure('REWS seed {}'.format(Seed))
-            # plt.subplot(311)
-            # plt.plot(R_FBFF['Time'], REWS_WindField_Fs, label='wind field')
-            # plt.plot(R_FBFF['Time'], R_FBFF['REWS'], label='lidar estimate')
-            # plt.ylabel('REWS [m/s]')
-            # plt.legend()
-            # plt.grid(True)
-            # plt.subplot(312)
-            # plt.plot(R_FBFF['Time'], REWS_WindField_Fs_shifted, label='wind field shifted')
-            # plt.plot(R_FBFF['Time'], R_FBFF['REWS_b'], label='lidar estimate filtered and buffered')
-            # plt.ylabel('REWS [m/s]')
-            # plt.legend()
-            # plt.grid(True)
-            # plt.subplot(313)
-            # plt.plot(R_FBFF['Time'], Error)
-            # plt.ylabel('error [m/s]')
-            # plt.xlabel('time [s]')
-            # plt.grid(True)
+            plt.figure('REWS seed {}'.format(Seed))
+            plt.subplot(311)
+            plt.plot(R_FBFF['Time'], REWS_WindField_Fs, label='wind field')
+            plt.plot(R_FBFF['Time'], R_FBFF['REWS'], label='lidar estimate')
+            plt.ylabel('REWS [m/s]')
+            plt.legend()
+            plt.grid(True)
+            plt.subplot(312)
+            plt.plot(R_FBFF['Time'], REWS_WindField_Fs_shifted, label='wind field shifted')
+            plt.plot(R_FBFF['Time'], R_FBFF['REWS_b'], label='lidar estimate filtered and buffered')
+            plt.ylabel('REWS [m/s]')
+            plt.legend()
+            plt.grid(True)
+            plt.subplot(313)
+            plt.plot(R_FBFF['Time'], Error)
+            plt.ylabel('error [m/s]')
+            plt.xlabel('time [s]')
+            plt.grid(True)
         BufferPlot[iBuffer] = T_buffer_start
         T_buffer_start = T_buffer_start + T_buffer_step
         Cost = np.mean(MAE)
