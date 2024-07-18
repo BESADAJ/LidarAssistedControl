@@ -9,3 +9,4 @@ SimulationResults*
 slprj
 *.slxc
 LidarAssistedControl.egg-info
+codegen
