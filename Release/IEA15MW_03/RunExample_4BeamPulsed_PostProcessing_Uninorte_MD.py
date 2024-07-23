@@ -32,6 +32,7 @@ R = 120                                             # [m]  	rotor radius to calc
 
 # Parameter for Cost (Summer Games 2024)
 tau = 2                                             # [s]   time to overcome pitch actuator, from Example 1: tau = T_Taylor - T_buffer, since there T_filter = T_scan = 0
+# configuration from LDP_v1_4BeamPulsed.IN and FFP_v1_4BeamPulsed.IN
 
 #Parameters modification for brute force, T_Buffer, f_cutoff
 
@@ -56,6 +57,9 @@ for i_f_cutoff in range(f_cutoff_count):
             "FlagLPF": 1,
             "f_cutoff":  float(f_cutoff_start),
             "T_buffer": float(T_buffer_start),
+            "MeasurementDistances": np.concatenate((np.arange(70, 151, 20), np.arange(160, 201, 10))),
+            "MeanWindSpeed": 18,
+            "IdxFirstDistance": 4
         }
 
 
