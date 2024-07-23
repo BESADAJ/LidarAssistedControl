@@ -21,7 +21,7 @@ from PreProcessing.CalculateREWSfromWindField import CalulateREWSfromWindField
 from FileOperations.ReadFASTbinaryIntoStruct import ReadFASTbinaryIntoStruct
 
 # Seeds (can be adjusted, but will provide different results)
-nSeed = 1
+nSeed = 6
 Seed_vec = np.arange(1, nSeed + 1) + 18 * 100
 
 # Parameters postprocessing (can be adjusted, but will provide different results)
@@ -35,13 +35,13 @@ tau = 2                                             # [s]   time to overcome pit
 
 #Parameters modification for brute force, T_Buffer, f_cutoff
 
-T_buffer_start = 1.8
+T_buffer_start = 0
 T_buffer_reset = T_buffer_start
 T_buffer_step = 0.1
-T_buffer_count = 1
+T_buffer_count = 10
 f_cutoff_start = 0.16
-f_cutoff_step = 0.01
-f_cutoff_count = 1
+f_cutoff_step = 0.02
+f_cutoff_count = 3
 CostPlot = np.zeros(T_buffer_count)
 BufferPlot = np.zeros(T_buffer_count)
 
@@ -88,24 +88,24 @@ for i_f_cutoff in range(f_cutoff_count):
             MAE[iSeed] = np.mean(np.abs(Error[R_FBFF["Time"] >= t_start]))
 
             # Plot REWS for absolute error
-            plt.figure('REWS seed {}'.format(Seed))
-            plt.subplot(311)
-            plt.plot(R_FBFF['Time'], REWS_WindField_Fs, label='wind field')
-            plt.plot(R_FBFF['Time'], R_FBFF['REWS'], label='lidar estimate')
-            plt.ylabel('REWS [m/s]')
-            plt.legend()
-            plt.grid(True)
-            plt.subplot(312)
-            plt.plot(R_FBFF['Time'], REWS_WindField_Fs_shifted, label='wind field shifted')
-            plt.plot(R_FBFF['Time'], R_FBFF['REWS_b'], label='lidar estimate filtered and buffered')
-            plt.ylabel('REWS [m/s]')
-            plt.legend()
-            plt.grid(True)
-            plt.subplot(313)
-            plt.plot(R_FBFF['Time'], Error)
-            plt.ylabel('error [m/s]')
-            plt.xlabel('time [s]')
-            plt.grid(True)
+            # plt.figure('REWS seed {}'.format(Seed))
+            # plt.subplot(311)
+            # plt.plot(R_FBFF['Time'], REWS_WindField_Fs, label='wind field')
+            # plt.plot(R_FBFF['Time'], R_FBFF['REWS'], label='lidar estimate')
+            # plt.ylabel('REWS [m/s]')
+            # plt.legend()
+            # plt.grid(True)
+            # plt.subplot(312)
+            # plt.plot(R_FBFF['Time'], REWS_WindField_Fs_shifted, label='wind field shifted')
+            # plt.plot(R_FBFF['Time'], R_FBFF['REWS_b'], label='lidar estimate filtered and buffered')
+            # plt.ylabel('REWS [m/s]')
+            # plt.legend()
+            # plt.grid(True)
+            # plt.subplot(313)
+            # plt.plot(R_FBFF['Time'], Error)
+            # plt.ylabel('error [m/s]')
+            # plt.xlabel('time [s]')
+            # plt.grid(True)
         BufferPlot[iBuffer] = T_buffer_start
         T_buffer_start = T_buffer_start + T_buffer_step
         Cost = np.mean(MAE)

@@ -25,9 +25,10 @@ def CalculateREWSfromLidarData_LDP_MD(FBFF, DT, TMax, LDP):
             REWS_MD = WindFieldReconstruction(v_los_MD, LDP["NumberOfBeams"], LDP["AngleToCenterline"])
 
             #combine to one distance
-            REWS = REWS_MD[5]
+            [REWS, REWS_MD_shifted] = CombineAndShift(REWS_MD, LDP['MeasurementDistances'], ["LDPIdxFirstDistance"], LDP["MeanWindSpeed"], DT);
 
-        # Low-pass filter the REWS
+
+            # Low-pass filter the REWS
         if LDP["FlagLPF"]:
             REWS_f = LPFilter(REWS, DT, LDP["f_cutoff"])
         else:
@@ -65,6 +66,30 @@ def WindFieldReconstruction(v_los_MD, NumberOfBeams, AngleToCenterline):
     return REWS_MD
 
 
+def CombineAndShift(REWS_MD, MeasurementDistances, IdxFirstDistance, MeanWindSpeed, DT):
+    # internal variables
+    nBuffer = 800  # Worst case: T_Taylor/dt with T_Taylor=180/18 s, dt=0.0125 s
+
+    # get numberOfDistances from signal
+    NumberOfDistances = len(REWS_MD)
+
+    # init Buffer
+    REWS_MD_Buffer = np.ones((nBuffer, NumberOfDistances)) * REWS_MD[0]
+
+    # update FirstInLastOut buffer
+    REWS_MD_Buffer[1:nBuffer, :] = REWS_MD.reshape(-1, 1)
+
+    # get shifted values
+    REWS_MD_shifted = np.empty(NumberOfDistances)
+    for iDistance in range(NumberOfDistances):
+        T_Taylor = (MeasurementDistances[iDistance] - MeasurementDistances[IdxFirstDistance]) / MeanWindSpeed
+        Idx = max(0, min(nBuffer - 1, int(np.ceil(1 + T_Taylor / DT))))
+        REWS_MD_shifted[iDistance] = REWS_MD_Buffer[Idx, iDistance]
+
+    # combine distances: overall REWS is mean over REWS from considered distances
+    REWS = np.mean(REWS_MD_shifted[IdxFirstDistance:])
+
+    return REWS, REWS_MD_shifted
 def LPFilter(InputSignal, DT, CornerFreq):
 
     # Initialization of persistent variables
