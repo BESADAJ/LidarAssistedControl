@@ -81,12 +81,12 @@ def CombineAndShift(REWS_MD, MeasurementDistances, IdxFirstDistance, MeanWindSpe
     # update FirstInLastOut buffer
     REWS_MD_Buffer[1:nBuffer, :] = np.reshape(REWS_MD, (-1, 1)).T
 
-
+    REWS_MD_Buffer= REWS_MD_Buffer[:-1]
     # get shifted values
     REWS_MD_shifted = np.empty(NumberOfDistances)
     for iDistance in range(NumberOfDistances):
         T_Taylor = (MeasurementDistances[iDistance] - MeasurementDistances[IdxFirstDistance-1]) / MeanWindSpeed
-        Idx = max(0, min(nBuffer - 1, int(np.ceil(1 + T_Taylor / DT))))
+        Idx = max(0, min(nBuffer - 1, int(np.ceil(T_Taylor / DT))))
         REWS_MD_shifted[iDistance] = REWS_MD_Buffer[Idx, iDistance]
 
     # combine distances: overall REWS is mean over REWS from considered distances
