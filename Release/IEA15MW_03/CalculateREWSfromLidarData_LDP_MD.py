@@ -15,6 +15,10 @@ def CalculateREWSfromLidarData_LDP_MD(FBFF, DT, TMax, LDP):
     R_FBFF["REWS_f"] = np.full(n_t, np.nan)
     R_FBFF["REWS_b"] = np.full(n_t, np.nan)
 
+    #new multidistance arrays
+    R_FBFF["REWS_MD_shifted"] = np.full((n_t,10),np.nan)
+    R_FBFF["REWS_MD"] = np.full((n_t,10),np.nan)
+
     # Loop over time
     for i_t in range(n_t):
         Idx = max(i_t - 1, 0)  # Due to co-simulation of OpenFAST and the controller DLLs
@@ -24,8 +28,8 @@ def CalculateREWSfromLidarData_LDP_MD(FBFF, DT, TMax, LDP):
             v_los_MD = np.array([FBFF["VLOS01LI"][Idx],FBFF["VLOS02LI"][Idx],FBFF["VLOS03LI"][Idx],FBFF["VLOS04LI"][Idx],FBFF["VLOS05LI"][Idx],FBFF["VLOS06LI"][Idx],FBFF["VLOS07LI"][Idx],FBFF["VLOS08LI"][Idx],FBFF["VLOS09LI"][Idx],FBFF["VLOS10LI"][Idx]])
             REWS_MD = WindFieldReconstruction(v_los_MD, LDP["NumberOfBeams"], LDP["AngleToCenterline"])
 
-            #combine to one distance
-            [REWS, REWS_MD_shifted] = CombineAndShift(REWS_MD, LDP['MeasurementDistances'], LDP['IdxFirstDistance'], LDP["MeanWindSpeed"], DT)
+        #combine to one distance
+        [REWS, REWS_MD_shifted] = CombineAndShift(REWS_MD, LDP['MeasurementDistances'], LDP['IdxFirstDistance'], LDP["MeanWindSpeed"], DT)
 
 
             # Low-pass filter the REWS
@@ -41,6 +45,8 @@ def CalculateREWSfromLidarData_LDP_MD(FBFF, DT, TMax, LDP):
         R_FBFF["REWS"][i_t] = REWS
         R_FBFF["REWS_f"][i_t] = REWS_f
         R_FBFF["REWS_b"][i_t] = REWS_b
+        R_FBFF["REWS_MD"][i_t, :] = REWS
+        R_FBFF["REWS_MD_shifted"][i_t, :] = REWS_f
 
     return R_FBFF
 
@@ -72,22 +78,22 @@ def CombineAndShift(REWS_MD, MeasurementDistances, IdxFirstDistance, MeanWindSpe
     # internal variables
     nBuffer = 800  # Worst case: T_Taylor/dt with T_Taylor=180/18 s, dt=0.0125 s
 
-    REWS_MD_Buffer = None
     # get numberOfDistances from signal
     NumberOfDistances = len(REWS_MD)
 
-    if REWS_MD_Buffer is None:
-        REWS_MD_Buffer = [[REWS_MD[0]] * NumberOfDistances for _ in range(nBuffer)]
+    if not hasattr(CombineAndShift,"REWS_MD_Buffer"):
+        CombineAndShift.REWS_MD_Buffer=np.full((nBuffer, NumberOfDistances),REWS_MD[0])
 
-    # update FirstInLastOut buffer
-    REWS_MD_Buffer = np.vstack((REWS_MD, REWS_MD_Buffer))
-    REWS_MD_Buffer = np.delete(REWS_MD_Buffer,nBuffer,axis=0)
+    #Combine new data
+    CombineAndShift.REWS_MD_Buffer = np.vstack([REWS_MD,CombineAndShift.REWS_MD_Buffer[: nBuffer-1, :]])
+
+
     # get shifted values
     REWS_MD_shifted = np.empty(NumberOfDistances)
     for iDistance in range(NumberOfDistances):
         T_Taylor = (MeasurementDistances[iDistance] - MeasurementDistances[IdxFirstDistance-1]) / MeanWindSpeed
         Idx = max(0, min(nBuffer - 1, int(np.ceil(T_Taylor / DT))))
-        REWS_MD_shifted[iDistance] = REWS_MD_Buffer[Idx, iDistance]
+        REWS_MD_shifted[iDistance] = CombineAndShift.REWS_MD_Buffer[Idx, iDistance]
 
     # combine distances: overall REWS is mean over REWS from considered distances
     REWS = np.nanmean(REWS_MD_shifted[IdxFirstDistance-1:])
