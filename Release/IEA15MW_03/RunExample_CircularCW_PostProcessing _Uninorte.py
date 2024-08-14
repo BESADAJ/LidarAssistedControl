@@ -45,6 +45,9 @@ f_cutoff_count = 5
 CostPlot = np.zeros(T_buffer_count)
 BufferPlot = np.zeros(T_buffer_count)
 
+# initializing a variable for storing the lowest cost, 5 is a high value that will be replaced later
+lowest_cost = 5
+
 # Configuration from LDP_v1_4BeamPulsed.IN and LDP_v1_4BeamPulsed.IN
 for i_f_cutoff in range(f_cutoff_count):
     T_buffer_start=T_buffer_reset
@@ -76,6 +79,12 @@ for i_f_cutoff in range(f_cutoff_count):
             # Calculate REWS
             R_FBFF = CalculateREWSfromLidarData_LDP_v1(FBFF, DT, TMax, LDP)
 
+            #store REWS_b
+            if iSeed == 0:
+                stored_REWS_b = R_FBFF["REWS_b"]
+            else:
+                stored_REWS_b=np.vstack((R_FBFF["REWS_b"], stored_REWS_b  ))
+
             # Get REWS from the wind field and interpolate it on the same time vector
             TurbSimResultFile = f'TurbulentWind/URef_18_Seed_{Seed:02d}.wnd'
             REWS_WindField, Time_WindField = CalulateREWSfromWindField(TurbSimResultFile, R, 2)
@@ -85,6 +94,7 @@ for i_f_cutoff in range(f_cutoff_count):
             REWS_WindField_Fs_shifted = interp1d(Time_WindField.ravel() - tau, REWS_WindField.ravel())(R_FBFF['Time'])
             Error = REWS_WindField_Fs_shifted - R_FBFF["REWS_b"]
             MAE[iSeed] = np.mean(np.abs(Error[R_FBFF["Time"] >= t_start]))
+
 
             # Plot REWS for absolute error
             # plt.figure('REWS seed {}'.format(Seed))
@@ -106,7 +116,6 @@ for i_f_cutoff in range(f_cutoff_count):
             # plt.xlabel('time [s]')
             # plt.grid(True)
         BufferPlot[iBuffer] = T_buffer_start
-        T_buffer_start = T_buffer_start + T_buffer_step
         Cost = np.mean(MAE)
 
 
@@ -115,6 +124,21 @@ for i_f_cutoff in range(f_cutoff_count):
         print(f'Cost for Summer Games 2024 ("18 m/s hurdles"): {Cost:.6f}')
 
         CostPlot[iBuffer]= Cost
+
+        #print the lowest code and store the REWS_B
+        if Cost <= lowest_cost:
+            lowest_cost = Cost
+            lowest_f_Cutoff = f_cutoff_start
+            lowestT_buffer = T_buffer_start
+            Optimized_REWS_b = stored_REWS_b
+            Optimized_R_FBFF_Time = R_FBFF["Time"]
+
+        T_buffer_start = T_buffer_start + T_buffer_step
+        #restart the deleted REWS
+        del stored_REWS_b
+
+
+
 
 
 
@@ -125,6 +149,13 @@ for i_f_cutoff in range(f_cutoff_count):
 
 plt.ylabel('Cost')
 plt.xlabel('T_Buffer')
+print(f'Lowest Cost for Summer Games 2024 ("18 m/s hurdles"): {lowest_cost:.6f} '
+      f'Lowest f_cutoff: {lowest_f_Cutoff:.2f} '
+      f'lowest T_Buffer_ {lowestT_buffer:.2f} ')
+#save R_FBFF_REWS_b and R_FBFF_Time
+np.savetxt("../Lowest cost R_FBFF_REWS_b results.txt", Optimized_REWS_b)
+np.savetxt("../Lowest cost R_FBFF_Time results.txt", Optimized_R_FBFF_Time)
+
 plt.show()
 
 

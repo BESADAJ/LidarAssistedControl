@@ -45,6 +45,8 @@ f_cutoff_step = 0.02
 f_cutoff_count = 3
 CostPlot = np.zeros(T_buffer_count)
 BufferPlot = np.zeros(T_buffer_count)
+# initializing a variable for storing the lowest cost, 5 is a high value that will be replaced later
+lowest_cost = 5
 
 # Configuration from LDP_v1_4BeamPulsed.IN and LDP_v1_4BeamPulsed.IN
 for i_f_cutoff in range(f_cutoff_count):
@@ -111,7 +113,7 @@ for i_f_cutoff in range(f_cutoff_count):
             # plt.xlabel('time [s]')
             # plt.grid(True)
         BufferPlot[iBuffer] = T_buffer_start
-        T_buffer_start = T_buffer_start + T_buffer_step
+
         Cost = np.mean(MAE)
 
 
@@ -120,6 +122,16 @@ for i_f_cutoff in range(f_cutoff_count):
         print(f'Cost for Summer Games 2024 ("18 m/s hurdles"): {Cost:.6f}')
 
         CostPlot[iBuffer]= Cost
+        #evaluate the lowest cost and its parameters
+        if Cost <= lowest_cost:
+            lowest_cost = Cost
+            lowest_f_Cutoff = f_cutoff_start
+            lowestT_buffer = T_buffer_start
+
+        T_buffer_start = T_buffer_start + T_buffer_step
+
+
+
 
 
 
@@ -130,6 +142,9 @@ for i_f_cutoff in range(f_cutoff_count):
 
 plt.ylabel('Cost')
 plt.xlabel('T_Buffer')
+print(f'Lowest Cost for Summer Games 2024 ("18 m/s hurdles"): {lowest_cost:.6f} '
+      f'Lowest f_cutoff: {lowest_f_Cutoff:.2f}'
+      f'lowest T_Buffer_ {lowestT_buffer:.2f} ')
 plt.show()
 
 
